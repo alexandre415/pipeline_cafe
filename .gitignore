@@ -1,6 +1,0 @@
-.vscode
-*.ipynb
-**/__pycache__/
-*.json
-*.csv
-

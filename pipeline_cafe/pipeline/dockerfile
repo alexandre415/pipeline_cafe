@@ -1,0 +1,19 @@
+# Usa uma imagem base Python, adequada para data science
+FROM python:3.9-slim-buster
+
+# Define o diretório de trabalho dentro do contêiner
+WORKDIR /app/data_pipeline_cafe/pipeline
+
+# Copia o arquivo requirements.txt (vamos criar ele no próximo passo)
+# para instalar as dependências
+COPY requirements.txt .
+
+# Instala as dependências Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia o restante do seu código da pasta pipeline para o contêiner
+COPY . .
+
+# Comando padrão para quando o contêiner for iniciado.
+# Você pode remover ou ajustar isso dependendo de como o Airflow vai chamar seu script.
+# ENTRYPOINT ["python", "workflow.py"]

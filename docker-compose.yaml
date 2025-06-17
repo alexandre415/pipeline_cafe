@@ -1,0 +1,92 @@
+
+
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:2.8.1-python3.9 # Versão do Airflow
+  environment:
+    # Variáveis de ambiente do Airflow
+    AIRFLOW_UID: 50000
+    AIRFLOW_GID: 0
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags # Onde o Airflow vai procurar seus DAGs
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor # Ou CeleryExecutor para produção
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__WEBSERVER__RBAC: "True"
+    AIRFLOW__WEBSERVER__AUTH_BACKENDS: "airflow.www.security.backends.database_auth"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False" # Não carregar DAGs de exemplo do Airflow
+    _PIP_ADDITIONAL_REQUIREMENTS: "-r /opt/airflow/requirements.txt"
+    
+    # SUAS VARIÁVEIS DE AMBIENTE DO GCP AQUI
+    GCP_PROJECT_ID: "data-pipeline-cafe" # Substitua pelo seu ID de projeto
+    BQ_DATASET_ID: "data-pipeline-cafe.data_set_cafe" # Substitua pelo seu ID de dataset
+    
+    # Caminho da sua chave de serviço DENTRO DO CONTÊINER!
+    GOOGLE_APPLICATION_CREDENTIALS: "/opt/airflow/gcp-credentials/data-pipeline-cafe-0f0423899328.json" 
+  
+  volumes:
+    # Monta a pasta onde estão seus DAGs (seu projeto 'pipeline')
+    - ./data_pipeline_cafe/pipeline:/opt/airflow/dags
+    # Monta a pasta de output para que os dados tratados sejam persistidos no seu host
+    - ./data_pipeline_cafe/output:/opt/airflow/output
+    # Monta a pasta de credenciais para que seja acessível dentro dos contêineres
+    - ./gcp-credentials:/opt/airflow/gcp-credentials
+    #Local where is data raw
+    - ./data_pipeline_cafe/dataset:/opt/airflow/dataset
+    #location of requirements file
+    - ./data_pipeline_cafe/pipeline/requirements.txt:/opt/airflow/requirements.txt
+    
+
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5433:5432" # Porta do PostgreSQL, se quiser acessar do host
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8081:8080" # Porta da UI do Airflow
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", "airflow tasks list --subdir /opt/airflow/dags --pickle --json | grep ."]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # O Airflow Worker executará suas tarefas (onde seu workflow.py vai rodar)
+  worker:
+    <<: *airflow-common
+    command: worker
+    # Se você precisar de uma imagem customizada para o worker que inclua seu pipeline,
+    # você pode usar `build:` aqui, mas para simplificar, os DAGs e a pasta de output já estão montados.
+    # No entanto, se o seu workflow.py tem muitas dependências específicas que não estão no apache/airflow,
+    # pode ser melhor usar sua imagem customizada aqui.
+    # Por agora, vamos manter o apache/airflow para simplicidade e confiar que suas dependências
+    # foram instaladas no ambiente da sua máquina ou que o workflow.py será executado via PythonOperator
+    # que já terá as libs no ambiente do worker.
+volumes: # <-- ADICIONE ESTE BLOCO NA RAIZ DO SEU ARQUIVO
+  pg_data: # <-- ESTE É O VOLUME NOMEADO REFERENCIADO ACIMA
+    name: airflow_pg_data
