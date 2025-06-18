@@ -69,7 +69,7 @@ Set in `docker-compose.yaml`:
 Install dependencies:
 
 ```sh
-cd pipeline_cafe/pipeline
+cd data_pipeline_cafe/pipeline
 pip install -r requirements.txt
 ```
 
