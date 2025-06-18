@@ -4,12 +4,15 @@ FROM python:3.9-slim-buster
 # Define o diretório de trabalho dentro do contêiner
 WORKDIR /app/data_pipeline_cafe/pipeline
 
+# É uma boa prática atualizar o pip primeiro
+RUN pip install --no-cache-dir --upgrade pip
+
+# Instale suas dependências
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 # Copia o arquivo requirements.txt (vamos criar ele no próximo passo)
 # para instalar as dependências
-COPY requirements.txt .
-
-# Instala as dependências Python
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Copia o restante do seu código da pasta pipeline para o contêiner
 COPY . .

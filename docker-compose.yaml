@@ -13,6 +13,8 @@ x-airflow-common:
     AIRFLOW__WEBSERVER__RBAC: "True"
     AIRFLOW__WEBSERVER__AUTH_BACKENDS: "airflow.www.security.backends.database_auth"
     AIRFLOW__CORE__LOAD_EXAMPLES: "False" # Não carregar DAGs de exemplo do Airflow
+    AIRFLOW__WEBSERVER__SECRET_KEY: "f93kG@8cR1x9Z!tP$2Vm*LzAqT7u"
+
     _PIP_ADDITIONAL_REQUIREMENTS: "-r /opt/airflow/requirements.txt"
     
     # SUAS VARIÁVEIS DE AMBIENTE DO GCP AQUI

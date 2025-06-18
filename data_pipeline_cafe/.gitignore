@@ -1,9 +1,11 @@
 .vscode
 *.ipynb
-**/__pycache__/
+/__pycache__/
 *.json
 *.csv
 gcp-credentials/*.json
 .env
 *.env
 *.pyc
+output/
+.conda
